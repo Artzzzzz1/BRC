@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRC Calamba - FAQs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="pages.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav>
+    <a href="index.php" class="nav-brand"><img src="assets/images/logo-wide.jpg" alt="BRC Bossride Customs" class="nav-logo-wide"></a>
+    <ul class="nav-links">
+      <li><a href="index.php">Home</a></li>
+      <li><a href="about.html">About Us</a></li>
+      <li><a href="services.html">Our Services</a></li>
+      <li><a href="contact.html">Contact Us</a></li>
+      <li><a href="faqs.html" class="active">FAQs</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation"><span></span><span></span><span></span></button><a href="login.php" class="btn-login desktop-only">Login/Register</a>
+  </nav>
+  <div class="mobile-nav" id="mobileNav">
+    <a href="index.php">Home</a>
+    <a href="about.html">About Us</a>
+    <a href="services.html">Our Services</a>
+    <a href="contact.html">Contact Us</a>
+    <a href="faqs.html">FAQs</a>
+    <a href="login.php" class="btn-login">Login / Register</a>
+  </div>
+
+  <!-- PAGE HERO -->
+  <section class="page-hero">
+    <h1>Frequently Asked Questions</h1>
+    <p>Got questions? We've got answers.</p>
+  </section>
+
+  <!-- FAQS -->
+  <section class="page-section">
+    <div class="page-container">
+      <div class="faq-wrap">
+
+        <div class="faq-group">
+          <h3 class="faq-category">General</h3>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              What is BRC Calamba?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>BRC or BossRide Customs is a local motorcycle shop specializing in customization, repair, and maintenance services. The shop offers a wide range of services including installation of aftermarket parts, rim upgrades, and performance enhancements, providing customers with both aesthetic and functional improvements for their motorcycles.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              Where are you located?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Our shop is located at Real Street Calamba Laguna. Landmark: near SM Calamba, beside Rephil.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              What are your business hours?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>We are open Monday to Friday, 9:00 AM – 8:00 PM, and 8:00 AM – 8:00 PM on Weekends.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group">
+          <h3 class="faq-category">Booking & Appointments</h3>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              How do I book an appointment?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>You can book an appointment by creating an account and logging in to our online portal. Once logged in, simply choose your desired service, preferred date, and time. Walk-ins are also accepted, but booking in advance is recommended to avoid long waiting times.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              Can I cancel or reschedule my appointment?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Yes, you can cancel or reschedule your appointment through your account dashboard. We recommend informing us at least a few hours in advance so we can accommodate other customers.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              How long does installation take?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>The installation time varies depending on the complexity of the service requested. Our team will provide you with an estimated timeline during your consultation.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group">
+          <h3 class="faq-category">Rim Borrowing</h3>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              How does the rim borrowing program work?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Our rim borrowing program allows customers to temporarily use available rims while their original rims are being customized or repaired. This ensures that customers can still use their motorcycles during the service period.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              Is there a fee for borrowing rims?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Yes, a minimal fee or deposit may be required for borrowing rims. The amount depends on the type of rim and duration of use. The deposit is refundable once the borrowed rims are returned in good condition.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group">
+          <h3 class="faq-category">Account & Portal</h3>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              Do I need an account to use the portal?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Yes, you need to register for a free account to access features like booking appointments, tracking your service, checking queue status, and using the 3D rim preview.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              I forgot my password. What should I do?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>If you forgot your password, simply click the "Forgot Password?" link on the login page. Follow the instructions to reset your password using your registered email address.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <h2>Still Have Questions?</h2>
+    <p>Our team is happy to help. Reach out to us anytime.</p>
+    <a href="contact.html" class="btn-primary">Contact Us</a>
+  </section>
+
+  <script>
+    function toggleFaq(btn) {
+      const item = btn.parentElement;
+      const answer = item.querySelector('.faq-answer');
+      const icon = btn.querySelector('.faq-icon');
+      const isOpen = item.classList.contains('open');
+
+      // Close all
+      document.querySelectorAll('.faq-item.open').forEach(el => {
+        el.classList.remove('open');
+        el.querySelector('.faq-answer').style.maxHeight = null;
+        el.querySelector('.faq-icon').textContent = '+';
+      });
+
+      // Open clicked if it was closed
+      if (!isOpen) {
+        item.classList.add('open');
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+        icon.textContent = '×';
+      }
+    }
+  </script>
+
+  <script>
+    const toggle = document.getElementById("navToggle");
+    const mobileNav = document.getElementById("mobileNav");
+    toggle.addEventListener("click", () => { mobileNav.classList.toggle("open"); });
+    document.addEventListener("click", (e) => { if (!toggle.contains(e.target) && !mobileNav.contains(e.target)) mobileNav.classList.remove("open"); });
+  </script>
+</body>
+</html>

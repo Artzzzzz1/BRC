@@ -1,0 +1,188 @@
+/* =====================
+   BRC Calamba - Login/Register Page
+   login.css
+   ===================== */
+
+.auth-wrapper {
+  min-height: calc(100vh - 70px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  padding: 40px 20px;
+}
+
+.auth-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.auth-brand h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.06em;
+  color: #0a0a0a;
+  margin-bottom: 4px;
+}
+
+.auth-brand h2 span { color: #CC0000; }
+
+.auth-brand p {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.auth-tabs {
+  display: flex;
+  border-radius: 8px;
+  background: #f2f4f7;
+  padding: 4px;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.auth-tab.active {
+  background: #ffffff;
+  color: #CC0000;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.auth-tab:hover:not(.active) { color: #1a1a1a; }
+
+.auth-alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.auth-alert-error   { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+.auth-alert-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+
+.auth-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.auth-form .form-group label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.auth-form .form-group input {
+  padding: 11px 14px;
+  border: 1.5px solid #e4e7ec;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  color: #1a1a1a;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-form .form-group input:focus {
+  border-color: #CC0000;
+  box-shadow: 0 0 0 3px rgba(204,0,0,0.08);
+}
+
+.auth-form .form-group input::placeholder {
+  color: #b0b7c3;
+  font-weight: 400;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 13px;
+  background: #CC0000;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s, transform 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.auth-btn:hover {
+  background: #aa0000;
+  transform: translateY(-1px);
+}
+
+.auth-switch {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 16px;
+}
+
+.auth-switch a {
+  color: #CC0000;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-switch a:hover { text-decoration: underline; }
+
+/* =====================
+   RESPONSIVE (added)
+   ===================== */
+
+@media (max-width: 480px) {
+  .auth-wrapper {
+    padding: 24px 16px;
+    align-items: flex-start;
+    padding-top: 40px;
+  }
+
+  .auth-card {
+    padding: 28px 20px;
+    border-radius: 12px;
+  }
+
+  .auth-brand h2 {
+    font-size: 1.7rem;
+  }
+
+  .auth-tab {
+    font-size: 0.78rem;
+    padding: 9px 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .auth-card {
+    padding: 24px 16px;
+  }
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRC Calamba - About Us</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="pages.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav>
+    <a href="index.php" class="nav-brand"><img src="assets/images/logo-wide.jpg" alt="BRC Bossride Customs" class="nav-logo-wide"></a>
+    <ul class="nav-links">
+      <li><a href="index.php">Home</a></li>
+      <li><a href="about.html" class="active">About Us</a></li>
+      <li><a href="services.html">Our Services</a></li>
+      <li><a href="contact.html">Contact Us</a></li>
+      <li><a href="faqs.html">FAQs</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation"><span></span><span></span><span></span></button><a href="login.php" class="btn-login desktop-only">Login/Register</a>
+  </nav>
+  <div class="mobile-nav" id="mobileNav">
+    <a href="index.php">Home</a>
+    <a href="about.html">About Us</a>
+    <a href="services.html">Our Services</a>
+    <a href="contact.html">Contact Us</a>
+    <a href="faqs.html">FAQs</a>
+    <a href="login.php" class="btn-login">Login / Register</a>
+  </div>
+
+  <!-- PAGE HERO -->
+  <section class="page-hero">
+    <h1>About Us</h1>
+    <p>Learn more about BRC Calamba and our story</p>
+  </section>
+
+  <!-- CONTENT -->
+  <section class="page-section">
+    <div class="page-container">
+
+      <!-- WHO WE ARE -->
+      <div class="content-block">
+        <h2>Who We Are</h2>
+        <p>We offer affordable and high-quality powder coating for motorcycle and vehicle mags, as well as other metal and alloy parts. Additionally, we provide motorcycle maintenance and repair services.</p>
+      </div>
+
+      <!-- MISSION & VISION -->
+      <div class="two-col">
+        <div class="content-block">
+          <h2>Our Mission</h2>
+          <p>To provide high-quality motorcycle customization and repair services that meet customer needs through reliable workmanship, innovative solutions, and excellent customer service.</p>
+        </div>
+        <div class="content-block">
+          <h2>Our Vision</h2>
+          <p>To become the leading destination for motorcycle customization and repair services in the region, known for our commitment to quality, innovation, and exceptional customer satisfaction.</p>
+        </div>
+      </div>
+
+      <!-- TEAM -->
+      <div class="content-block">
+        <h2>Meet the Team</h2>
+        <div class="team-grid">
+          <div class="team-card">
+            <div class="team-avatar">NV</div>
+            <h3>Nikko Viana</h3>
+            <span>Founder & CEO</span>
+          </div>
+          <div class="team-card">
+            <div class="team-avatar">-</div>
+            <h3>-</h3>
+            <span>Operations Manager</span>
+          </div>
+          <div class="team-card">
+            <div class="team-avatar">-</div>
+            <h3>-</h3>
+            <span>Head Technician</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <h2>Ready to Transform Your Vehicle?</h2>
+    <p>Join thousands of satisfied customers who trust BRC Calamba</p>
+    <a href="login.php" class="btn-primary">Get Started Today</a>
+  </section>
+
+  <script>
+    const toggle = document.getElementById("navToggle");
+    const mobileNav = document.getElementById("mobileNav");
+    toggle.addEventListener("click", () => { mobileNav.classList.toggle("open"); });
+    document.addEventListener("click", (e) => { if (!toggle.contains(e.target) && !mobileNav.contains(e.target)) mobileNav.classList.remove("open"); });
+  </script>
+</body>
+</html>

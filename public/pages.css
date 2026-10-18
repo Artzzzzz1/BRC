@@ -1,0 +1,519 @@
+/* =====================
+   BRC Calamba - Pages
+   pages.css (shared for About, Services, Contact, FAQs)
+   ===================== */
+
+/* =====================
+   PAGE HERO
+   ===================== */
+
+.page-hero {
+  background: var(--black);
+  color: var(--white);
+  text-align: center;
+  padding: 72px 48px 80px;
+}
+
+.page-hero h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  letter-spacing: 0.02em;
+  margin-bottom: 12px;
+  animation: fadeUp 0.6s ease both;
+}
+
+.page-hero p {
+  color: var(--red);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 500;
+  animation: fadeUp 0.6s 0.15s ease both;
+}
+
+/* =====================
+   PAGE SECTION WRAPPER
+   ===================== */
+
+.page-section {
+  padding: 72px 48px;
+  background: var(--white);
+}
+
+.page-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+}
+
+/* =====================
+   CONTENT BLOCK
+   ===================== */
+
+.content-block h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  position: relative;
+  padding-bottom: 12px;
+}
+
+.content-block h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: var(--red);
+  border-radius: 2px;
+}
+
+.content-block p {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+
+/* =====================
+   TWO COLUMN LAYOUT
+   ===================== */
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+/* =====================
+   STATS ROW (About)
+   ===================== */
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  background: var(--gray-light);
+  border-radius: 12px;
+  padding: 40px 32px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-number {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.8rem;
+  color: var(--red);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* =====================
+   TEAM GRID (About)
+   ===================== */
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.team-card {
+  border: 1.5px solid var(--gray-border);
+  border-radius: 10px;
+  padding: 32px 20px;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.team-card:hover {
+  border-color: var(--red);
+  box-shadow: 0 6px 20px rgba(204, 0, 0, 0.08);
+  transform: translateY(-4px);
+}
+
+.team-avatar {
+  width: 72px;
+  height: 72px;
+  background: var(--red);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  color: white;
+  letter-spacing: 0.05em;
+  margin: 0 auto 16px;
+}
+
+.team-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.team-card span {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* =====================
+   SERVICE DETAIL (Services)
+   ===================== */
+
+.service-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+}
+
+.service-detail-card {
+  border: 1.5px solid var(--gray-border);
+  border-radius: 12px;
+  padding: 36px 32px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.service-detail-card:hover {
+  border-color: var(--red);
+  box-shadow: 0 6px 24px rgba(204, 0, 0, 0.08);
+  transform: translateY(-4px);
+}
+
+.service-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--red);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.service-detail-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.service-detail-card p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.service-list {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 24px;
+}
+
+.service-list li {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--gray-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.service-list li::before {
+  content: '✓';
+  color: var(--red);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+/* =====================
+   CONTACT LAYOUT
+   ===================== */
+
+.contact-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+.contact-form-wrap h2,
+.contact-info-wrap h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 28px;
+  padding-bottom: 12px;
+  position: relative;
+}
+
+.contact-form-wrap h2::after,
+.contact-info-wrap h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: var(--red);
+  border-radius: 2px;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 12px 14px;
+  border: 1px solid var(--gray-border);
+  border-radius: 6px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.875rem;
+  color: var(--text-dark);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  resize: vertical;
+  width: 100%;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #bbb;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.08);
+}
+
+.btn-full {
+  width: 100%;
+  padding: 14px;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.contact-info-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.contact-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  background: var(--red);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-info-item h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.contact-info-item p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* =====================
+   FAQs
+   ===================== */
+
+.faq-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.faq-category {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--red);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--gray-border);
+}
+
+.faq-question {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 18px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  cursor: pointer;
+  text-align: left;
+  gap: 16px;
+  transition: color 0.2s;
+}
+
+.faq-question:hover {
+  color: var(--red);
+}
+
+.faq-icon {
+  font-size: 1.3rem;
+  color: var(--red);
+  font-weight: 400;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.faq-answer p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.8;
+  padding-bottom: 18px;
+}
+
+/* =====================
+   RESPONSIVE
+   ===================== */
+
+@media (max-width: 1024px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .two-col,
+  .contact-layout,
+  .service-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .team-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .page-section {
+    padding: 56px 24px;
+  }
+
+  .page-hero {
+    padding: 60px 24px 68px;
+  }
+}
+
+@media (max-width: 600px) {
+  .page-section {
+    padding: 40px 16px;
+  }
+
+  .page-hero {
+    padding: 48px 16px 56px;
+  }
+
+  .page-container {
+    gap: 40px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 24px 16px;
+    gap: 16px;
+  }
+
+  .stat-number {
+    font-size: 2.2rem;
+  }
+
+  .team-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .team-card {
+    padding: 20px 12px;
+  }
+
+  .service-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .service-detail-card {
+    padding: 24px 20px;
+  }
+
+  .contact-layout {
+    gap: 40px;
+  }
+
+  .faq-question {
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

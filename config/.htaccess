@@ -1,0 +1,12 @@
+# Block direct browser access to logs / text files in /config
+# (reset_log.txt contains live password-reset links).
+# logout.php must stay reachable because the sidebars link to it.
+<FilesMatch "\.(txt|log)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
