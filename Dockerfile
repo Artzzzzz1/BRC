@@ -10,12 +10,10 @@ RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf 
 COPY . /var/www/html/
 RUN chown -R www-data:www-data /var/www/html
 
-# Runs at container START (not build) because Railway can re-enable extra Apache MPM
-# modules at runtime, which crashes Apache with "More than one MPM loaded".
-# Also points Apache at the port Railway assigns via $PORT.
-CMD a2dismod mpm_event mpm_worker > /dev/null 2>&1 || true; \
-    rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*; \
-    a2enmod mpm_prefork > /dev/null 2>&1 || true; \
-    sed -i "s/Listen 80/Listen ${PORT:-80}/" /etc/apache2/ports.conf; \
-    sed -i "s/:80>/:${PORT:-80}>/" /etc/apache2/sites-available/000-default.conf; \
-    exec apache2-foreground
+# Startup script (strips Windows line endings just in case, then makes it executable)
+COPY railway-entrypoint.sh /usr/local/bin/railway-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/railway-entrypoint.sh \
+ && chmod +x /usr/local/bin/railway-entrypoint.sh \
+ && rm -f /var/www/html/Dockerfile /var/www/html/railway-entrypoint.sh /var/www/html/.dockerignore
+
+CMD ["/usr/local/bin/railway-entrypoint.sh"]
