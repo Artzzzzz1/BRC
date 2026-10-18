@@ -33,7 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           ->execute([$email, $token, $expiresAt]);
 
       // Build reset link
-      $resetLink = "http://localhost/BRC/public/reset-password.php?token=$token";
+      // Works on XAMPP (http://localhost/BRC/public/...) and on Railway (https://yourapp.up.railway.app/public/...).
+      // Railway terminates HTTPS before PHP, so trust X-Forwarded-Proto for the scheme.
+      $scheme    = (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https' || !empty($_SERVER['HTTPS'])) ? 'https' : 'http';
+      $baseDir   = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+      $resetLink = $scheme . '://' . $_SERVER['HTTP_HOST'] . $baseDir . '/reset-password.php?token=' . $token;
 
       // Send email (currently logs locally — see config/mailer.php)
       sendResetEmail($email, $resetLink);

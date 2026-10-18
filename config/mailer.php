@@ -11,7 +11,14 @@ function sendResetEmail(string $email, string $resetLink): bool {
   // Writes the reset link to a local log file so you can test without Gmail.
   // Delete this block when you go live.
   $log = date('Y-m-d H:i:s') . " | TO: $email | LINK: $resetLink\n";
-  file_put_contents(__DIR__ . '/reset_log.txt', $log, FILE_APPEND);
+  // Always send it to the server log (on Railway: service > Logs tab).
+  error_log('PASSWORD RESET ' . trim($log));
+  // Only write the file on your own PC. On a public server a token file under
+  // /config would be a risk, and Railway's disk is wiped on every deploy anyway.
+  $onServer = getenv('MYSQLHOST') !== false;
+  if (!$onServer) {
+    file_put_contents(__DIR__ . '/reset_log.txt', $log, FILE_APPEND);
+  }
   return true;
 
   // ── PHASE 2: Gmail via PHPMailer (uncomment when going live) ─────

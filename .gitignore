@@ -3,3 +3,10 @@ user-*old*.php
 user-*BIG*.php
 user-*working*.php
 user-*ogc*.php
+*old.php
+*old[0-9].php
+*working.php
+authw.php
+config/reset_log.txt
+*.rar
+*.zip
