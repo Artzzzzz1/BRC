@@ -3,7 +3,10 @@
 // Set $activePage before including, e.g. $activePage = 'dashboard';
 $activePage = $activePage ?? '';
 ?>
-<aside class="sidebar">
+<!-- Sidebar overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <a href="admin-dashboard.php">BRC <span>Calamba</span></a>
     <p>Admin Panel</p>
@@ -42,3 +45,28 @@ $activePage = $activePage ?? '';
     </a>
   </div>
 </aside>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  var toggleBtn = document.getElementById('sidebarToggle');
+  if (toggleBtn && sidebar && overlay) {
+    toggleBtn.addEventListener('click', function() {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    });
+    overlay.addEventListener('click', function() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    });
+    // Close sidebar on nav item click (mobile UX)
+    sidebar.querySelectorAll('.nav-item').forEach(function(link) {
+      link.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+      });
+    });
+  }
+});
+</script>

@@ -218,3 +218,48 @@ function jo_assign_worker(PDO $pdo, int $joId, ?int $workerId): array {
     return [false, 'Could not assign the worker. Please try again.'];
   }
 }
+
+/**
+ * EDIT the details of a job order that is still open (in_progress / ready).
+ * Used when the customer changes their mind (different color, service, rim size...).
+ * The customer's name / account link is NOT editable here on purpose.
+ */
+function jo_update_details(PDO $pdo, int $joId, array $in, ?int $actorId, string $actorName): array {
+  $service = trim($in['service'] ?? '');
+  if ($service === '') return [false, 'Service is required.'];
+  $est = trim($in['est_completion'] ?? '');
+
+  $pdo->beginTransaction();
+  try {
+    $stmt = $pdo->prepare("SELECT id, status, current_step FROM job_orders WHERE id = ? FOR UPDATE");
+    $stmt->execute([$joId]);
+    $jo = $stmt->fetch();
+
+    if (!$jo) { $pdo->rollBack(); return [false, 'Job order not found.']; }
+    if (!in_array($jo['status'], ['in_progress', 'ready'], true)) {
+      $pdo->rollBack(); return [false, 'This job order is already ' . $jo['status'] . ' and can no longer be edited.'];
+    }
+
+    $pdo->prepare("UPDATE job_orders SET service=?, vehicle=?, rim_count=?, rim_size=?, color_finish=?, notes=?, contact_number=?, est_completion=? WHERE id=?")
+        ->execute([
+          $service,
+          trim($in['vehicle'] ?? ''),
+          trim($in['rim_count'] ?? ''),
+          trim($in['rim_size'] ?? ''),
+          trim($in['color_finish'] ?? ''),
+          trim($in['notes'] ?? ''),
+          trim($in['contact_number'] ?? ''),
+          $est !== '' ? $est : null,
+          $joId,
+        ]);
+    // Log under the job's current step so this works with whatever the log table allows.
+    jo_log($pdo, $joId, (string)$jo['current_step'], 'Job order details edited.', $actorId, $actorName);
+
+    $pdo->commit();
+    return [true, 'Job order details updated.'];
+  } catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    error_log('jo_update_details: ' . $e->getMessage());
+    return [false, 'Could not update the job order. Please try again.'];
+  }
+}

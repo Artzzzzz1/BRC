@@ -198,6 +198,7 @@ $done    = array_filter($allQueue, fn($q) => $q['status']==='done');
             <?php if ($isToday): ?>
             <div class="q-card-actions">
               <form method="POST"><input type="hidden" name="action" value="done"><input type="hidden" name="queue_id" value="<?= $q['id'] ?>"><button type="submit" class="btn btn-red" style="padding:5px 12px;font-size:.75rem;">✓ Done</button></form>
+              <a href="admin-joborders.php?queue_id=<?= (int)$q['id'] ?>" class="btn btn-ghost" style="padding:5px 12px;font-size:.75rem;text-decoration:none;">Create Job Order</a>
             </div>
             <?php endif; ?>
           </div>

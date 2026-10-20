@@ -8,7 +8,7 @@ $stmt = $pdo->prepare("SELECT b.*, jo.jo_number FROM borrowings b LEFT JOIN job_
 $stmt->execute([userId()]);
 $borrowings = $stmt->fetchAll();
 
-$active  = array_filter($borrowings, fn($b) => in_array($b['status'], ['borrowed','overdue']));
+$activeBorrowings = array_filter($borrowings, fn($b) => in_array($b['status'], ['borrowed','overdue']));
 $history = array_filter($borrowings, fn($b) => $b['status'] === 'returned');
 ?>
 <!DOCTYPE html>
@@ -36,12 +36,12 @@ $history = array_filter($borrowings, fn($b) => $b['status'] === 'returned');
     <div class="section-card" style="margin-bottom:24px;">
       <div class="section-header"><h2>Active Borrowing</h2><span class="badge badge-borrowed">Loaner Out</span></div>
       <div style="padding:0;">
-        <?php if (empty($active)): ?>
+        <?php if (empty($activeBorrowings)): ?>
           <div class="section-body"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg><h3>No Active Borrowing</h3><p>You currently have no loaner rims issued.</p></div></div>
         <?php else: ?>
-          <?php foreach ($active as $b): ?>
+          <?php foreach ($activeBorrowings as $b): ?>
           <div style="padding:20px 24px;border-bottom:1px solid var(--border);">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+            <div class="three-col-grid">
               <div><div style="font-size:0.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Reference #</div><div style="font-weight:700;"><?= htmlspecialchars($b['br_number']) ?></div></div>
               <div><div style="font-size:0.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Loaner Rim</div><div style="font-weight:600;"><?= htmlspecialchars($b['loaner_rim']) ?></div></div>
               <div><div style="font-size:0.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Return By</div>

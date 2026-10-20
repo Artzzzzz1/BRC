@@ -10,7 +10,11 @@ $username = getenv('MYSQLUSER')     ?: 'root';
 $password = getenv('MYSQLPASSWORD') !== false ? getenv('MYSQLPASSWORD') : '';
 
 try {
-  $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4", $username, $password);
+  // MySQL 8 on Railway enables ONLY_FULL_GROUP_BY; XAMPP/MariaDB does not. Drop it
+  // for this connection so the existing GROUP BY queries behave the same as locally.
+  $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4", $username, $password, [
+    PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))"
+  ]);
   $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 } catch (PDOException $e) {

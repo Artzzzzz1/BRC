@@ -10,6 +10,9 @@ $actorName = userName();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   switch ($_POST['action']) {
+    case 'update_details':
+      [, $msg] = jo_update_details($pdo, (int)($_POST['jo_id'] ?? 0), $_POST, $actorId, $actorName);
+      break;
     case 'assign_worker':
       [, $msg] = jo_assign_worker($pdo, (int)($_POST['jo_id'] ?? 0), !empty($_POST['worker_id']) ? (int)$_POST['worker_id'] : null);
       break;
@@ -76,6 +79,7 @@ try {
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <span class="badge <?= $jo['status']==='ready'?'badge-completed':'badge-inprogress' ?>"><?= $jo['status']==='ready'?'Ready for Pickup':'In Progress' ?></span>
+          <button class="btn btn-ghost" style="padding:5px 12px;font-size:.75rem;" onclick="document.getElementById('editModal<?= $jo['id'] ?>').classList.add('open')">Edit Details</button>
           <?php if ($jo['status']==='ready'): ?>
           <button class="btn btn-red" style="padding:5px 12px;font-size:.75rem;" onclick="document.getElementById('payModal<?= $jo['id'] ?>').classList.add('open')">Complete &amp; Pay</button>
           <?php endif; ?>
@@ -105,6 +109,7 @@ try {
           <?php if ($jo['vehicle']): ?><span>🏍 <?= htmlspecialchars($jo['vehicle']) ?></span><?php endif; ?>
           <?php if ($jo['rim_count']): ?><span>🔩 <?= htmlspecialchars($jo['rim_count'].' '.$jo['rim_size']) ?></span><?php endif; ?>
           <?php if ($jo['color_finish']): ?><span>🎨 <?= htmlspecialchars($jo['color_finish']) ?></span><?php endif; ?>
+          <?php if (!empty($jo['notes'])): ?><span>📝 <?= htmlspecialchars($jo['notes']) ?></span><?php endif; ?>
           <?php if ($jo['est_completion']): ?><span>📅 Est: <?= date('M d, Y', strtotime($jo['est_completion'])) ?></span><?php endif; ?>
         </div>
         <!-- ASSIGN WORKER -->
@@ -129,6 +134,7 @@ try {
         <?php endif; ?>
       </div>
     </div>
+    <?php include '../config/jo-edit-modal.php'; ?>
     <!-- PAY MODAL -->
     <div class="modal-overlay" id="payModal<?= $jo['id'] ?>">
       <div class="modal">

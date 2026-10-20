@@ -21,6 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     case 'complete':
       [, $msg] = jo_complete($pdo, (int)($_POST['jo_id'] ?? 0), $_POST['amount'] ?? '', (string)($_POST['payment_method'] ?? ''), $actorId, $actorName);
       break;
+    case 'update_details':
+      [, $msg] = jo_update_details($pdo, (int)($_POST['jo_id'] ?? 0), $_POST, $actorId, $actorName);
+      break;
     case 'assign_worker':
       [, $msg] = jo_assign_worker($pdo, (int)($_POST['jo_id'] ?? 0), !empty($_POST['worker_id']) ? (int)$_POST['worker_id'] : null);
       break;
@@ -45,7 +48,8 @@ $stepLabels = ['received'=>'Received','stripping'=>'Stripping','coating'=>'Coati
 
 // Queue entries without job orders (today)
 try {
-  $stmtQ = $pdo->prepare("SELECT * FROM queue WHERE id NOT IN (SELECT queue_id FROM job_orders WHERE queue_id IS NOT NULL) AND queue_date = ? ORDER BY queue_number");
+  // LEFT JOIN appointments so the customer's notes (e.g. the 3D-preview rim design) come along too
+  $stmtQ = $pdo->prepare("SELECT q.*, a.notes AS appt_notes FROM queue q LEFT JOIN appointments a ON a.id = q.appointment_id WHERE q.id NOT IN (SELECT queue_id FROM job_orders WHERE queue_id IS NOT NULL) AND q.queue_date = ? ORDER BY q.queue_number");
   $stmtQ->execute([date('Y-m-d')]);
   $queueWithoutJO = $stmtQ->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
@@ -57,6 +61,24 @@ try {
   $stmtW = $pdo->query("SELECT id, full_name FROM users WHERE role='worker' ORDER BY full_name");
   $workers = $stmtW ? $stmtW->fetchAll(PDO::FETCH_ASSOC) : [];
 } catch (Exception $e) { $workers = []; }
+
+// Data used by the "Create Job Order" form to autofill itself from the picked queue entry
+$queueAutofill = [];
+foreach ($queueWithoutJO as $q) {
+  $queueAutofill[(int)$q['id']] = [
+    'queue_number'   => $q['queue_number'] ?? '',
+    'customer_type'  => $q['customer_type'] ?? '',
+    'user_id'        => $q['user_id'] ?? '',
+    'customer_name'  => $q['customer_name'] ?? '',
+    'contact_number' => $q['contact_number'] ?? '',
+    'vehicle'        => $q['vehicle'] ?? '',
+    'service'        => $q['service'] ?? '',
+    'rim_count'      => $q['rim_count'] ?? '',
+    'rim_size'       => $q['rim_size'] ?? '',
+    'color_finish'   => $q['color_finish'] ?? '',
+    'notes'          => $q['appt_notes'] ?? '',
+  ];
+}
 
 // Registered customers for the "Create Job Order" dropdown
 try {
@@ -116,6 +138,7 @@ try {
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <span class="badge <?= $jo['status']==='ready'?'badge-completed':'badge-inprogress' ?>"><?= $jo['status']==='ready'?'Ready for Pickup':'In Progress' ?></span>
+          <button class="btn btn-ghost" style="padding:5px 12px;font-size:.75rem;" onclick="document.getElementById('editModal<?= $jo['id'] ?>').classList.add('open')">Edit Details</button>
           <?php if ($jo['status']==='ready'): ?>
           <button class="btn btn-red" style="padding:5px 12px;font-size:.75rem;" onclick="document.getElementById('payModal<?= $jo['id'] ?>').classList.add('open')">Complete &amp; Pay</button>
           <?php endif; ?>
@@ -148,6 +171,7 @@ try {
           <?php if ($jo['vehicle']): ?><span>🏍 <?= htmlspecialchars($jo['vehicle']) ?></span><?php endif; ?>
           <?php if ($jo['rim_count']): ?><span>🔩 <?= htmlspecialchars($jo['rim_count'].' '.$jo['rim_size']) ?></span><?php endif; ?>
           <?php if ($jo['color_finish']): ?><span>🎨 <?= htmlspecialchars($jo['color_finish']) ?></span><?php endif; ?>
+          <?php if (!empty($jo['notes'])): ?><span>📝 <?= htmlspecialchars($jo['notes']) ?></span><?php endif; ?>
           <?php if ($jo['est_completion']): ?><span>📅 Est: <?= date('M d, Y', strtotime($jo['est_completion'])) ?></span><?php endif; ?>
         </div>
         <!-- ASSIGN WORKER -->
@@ -172,6 +196,7 @@ try {
         <?php endif; ?>
       </div>
     </div>
+    <?php include '../config/jo-edit-modal.php'; ?>
     <!-- PAY MODAL -->
     <div class="modal-overlay" id="payModal<?= $jo['id'] ?>">
       <div class="modal">
@@ -236,7 +261,7 @@ try {
         <div class="form-group span2"><label>Customer Type</label><select name="customer_type"><option value="walk-in">Walk-In</option><option value="online">Registered User</option></select></div>
         <?php if (!empty($queueWithoutJO)): ?>
         <div class="form-group span2"><label>Link to Queue Entry (optional)</label>
-          <select name="queue_id"><option value="">— Not linked —</option>
+          <select name="queue_id" id="joQueueSelect"><option value="">— Not linked —</option>
           <?php foreach ($queueWithoutJO as $q): ?><option value="<?= $q['id'] ?>">#<?= $q['queue_number'] ?> — <?= htmlspecialchars($q['customer_name']) ?> (<?= htmlspecialchars($q['service']) ?>)</option><?php endforeach; ?>
           </select>
         </div>
@@ -296,6 +321,62 @@ try {
       if (e.target === this) this.classList.remove('open');
     });
   });
+</script>
+<script>
+  // ── Autofill the Create Job Order form from the selected queue entry ──
+  // Everything stays editable, so staff/owner can change anything if the customer changed their mind.
+  const QUEUE_AUTOFILL = <?= json_encode($queueAutofill, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+  (function () {
+    var sel = document.getElementById('joQueueSelect');
+    if (!sel) return;
+    var form = sel.form;
+    var note = document.createElement('div');
+    note.style.cssText = 'display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#eff6ff;color:#1d4ed8;font-size:.76rem;font-weight:600;';
+    sel.parentNode.appendChild(note);
+
+    function setField(name, val) {
+      var el = form.elements[name];
+      if (!el) return;
+      val = (val === null || val === undefined) ? '' : String(val);
+      if (el.tagName === 'SELECT') {
+        if (val === '') return;                      // nothing to fill: keep the default
+        for (var i = 0; i < el.options.length; i++) {
+          if (el.options[i].value === val) { el.selectedIndex = i; return; }
+        }
+        var o = document.createElement('option');    // customer wrote something not in the list: keep it
+        o.value = val; o.text = val;
+        el.add(o); el.value = val;
+      } else {
+        el.value = val;
+      }
+    }
+
+    function fill() {
+      var d = QUEUE_AUTOFILL[sel.value];
+      if (!d) { note.style.display = 'none'; return; }
+      setField('customer_type', d.user_id ? 'online' : (d.customer_type || 'walk-in'));
+      setField('user_id', d.user_id);
+      setField('customer_name', d.customer_name);
+      setField('contact_number', d.contact_number);
+      setField('vehicle', d.vehicle);
+      setField('service', d.service);
+      setField('rim_count', d.rim_count);
+      setField('rim_size', d.rim_size);
+      setField('color_finish', d.color_finish);
+      setField('notes', d.notes);
+      note.textContent = 'Filled in from queue #' + d.queue_number + ' (' + d.customer_name + '). You can change anything before saving.';
+      note.style.display = 'block';
+    }
+    sel.addEventListener('change', fill);
+
+    // Deep link from the queue page: admin-joborders.php?queue_id=12 opens the form already filled
+    var qid = new URLSearchParams(window.location.search).get('queue_id');
+    if (qid && QUEUE_AUTOFILL[qid]) {
+      sel.value = qid;
+      fill();
+      document.getElementById('newJOModal').classList.add('open');
+    }
+  })();
 </script>
 </body>
 </html>

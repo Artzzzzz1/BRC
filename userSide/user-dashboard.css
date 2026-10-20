@@ -886,3 +886,16 @@ body {
 .sidebar-brand a img {
   display: block;
 }
+
+
+/* ── Responsive page layouts (replaces inline grids that never collapsed on phones) ── */
+.appt-layout   { display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; align-items: start; }
+.two-col-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.three-col-grid{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.appt-layout > *, .two-col-grid > *, .three-col-grid > * { min-width: 0; }
+@media (max-width: 900px) {
+  .appt-layout, .two-col-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .three-col-grid { grid-template-columns: 1fr; }
+}

@@ -383,7 +383,7 @@ if (!empty($_GET['name'])) {
 
       <!-- Footer -->
       <div class="panel-footer">
-        <a href="user-appointment.php" class="btn-book">Book This Color →</a>
+        <a href="user-appointment.php" class="btn-book" id="bookBtn">Book This Color →</a>
         <button class="btn-reset" onclick="resetSelection()">Reset to Default</button>
       </div>
     </div>
@@ -398,6 +398,7 @@ if (!empty($_GET['name'])) {
 <script>
 // ── SELECTED RIM (passed from user-rimselect.php, whitelisted server-side) ──
 const RIM_FILE = '<?= $rimFile ?>';
+const RIM_NAME = <?= json_encode($RIMS[$rimFile], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
 // ── COLOR OPTIONS ──
 const COLORS = [
@@ -443,6 +444,25 @@ let currentColor = COLORS[0];
 let currentFinish = FINISHES[0];
 let rimMeshes = [];
 let scene, camera, renderer, animationId;
+let modelRadius = 0.2;   // bounding-sphere radius of the scaled rim (updated after load)
+let maxZoomZ = 0.8;      // furthest the user can zoom out (updated by fitCamera)
+
+// Place the camera on the Z axis, looking at the rim's center, far enough back
+// that the whole rim stays in frame at ANY viewer aspect ratio (phones are
+// narrow, so horizontal FOV is the limiting side there) even while it spins.
+function fitCamera() {
+  const wrap = document.getElementById('viewerWrap');
+  const w = Math.max(wrap.clientWidth, 1), h = Math.max(wrap.clientHeight, 1);
+  camera.aspect = w / h;
+  const vFov = camera.fov * Math.PI / 180;
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+  const limiting = Math.min(vFov, hFov);
+  const dist = (modelRadius / Math.sin(limiting / 2)) * 1.15;
+  camera.position.set(0, 0, dist);
+  camera.lookAt(0, 0, 0);
+  camera.updateProjectionMatrix();
+  maxZoomZ = Math.max(0.8, dist * 1.6);
+}
 
 // ── BUILD COLOR SWATCHES ──
 const colorGrid = document.getElementById('colorGrid');
@@ -567,7 +587,7 @@ function initThree() {
 
   // Camera
   camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.01, 100);
-  camera.position.set(0, 0.08, 0.35);
+  camera.position.set(0, 0, 0.55); // real distance is set by fitCamera()
 
   // Renderer
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -625,17 +645,19 @@ function initThree() {
   // Orbit controls (manual)
   setupOrbit(canvas);
 
-  // Resize
-  window.addEventListener('resize', () => {
-    camera.aspect = wrap.clientWidth / wrap.clientHeight;
-    camera.updateProjectionMatrix();
+  // Resize — runs on window resize AND whenever the viewer box itself changes
+  // size (mobile address bar, orientation change, layout settling after load).
+  const onResize = () => {
     renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+    fitCamera();
     // Rebuild the vignette at the new aspect ratio, otherwise it goes
-    // stale/stretched again after a resize (e.g. rotating a phone, or
-    // resizing a desktop browser window).
+    // stale/stretched again after a resize.
     if (scene.background && scene.background.dispose) scene.background.dispose();
     scene.background = createVignetteTexture();
-  });
+  };
+  window.addEventListener('resize', onResize);
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(wrap);
+  fitCamera();
 
   // Animate
   animate();
@@ -674,6 +696,8 @@ function parseGLTF(buffer) {
 
     model.position.sub(center.multiplyScalar(scale));
     model.scale.setScalar(scale);
+    modelRadius = (size.length() * scale) / 2;
+    fitCamera();
 
     scene.add(model);
 
@@ -773,7 +797,7 @@ function setupOrbit(canvas) {
       const newDist = touchDist(e.touches);
       const delta = pinchStartDist - newDist;
       camera.position.z += delta * 0.0015;
-      camera.position.z = Math.max(0.1, Math.min(0.8, camera.position.z));
+      camera.position.z = Math.max(0.1, Math.min(maxZoomZ, camera.position.z));
       pinchStartDist = newDist;
       return;
     }
@@ -796,7 +820,7 @@ function setupOrbit(canvas) {
   // Zoom
   canvas.addEventListener('wheel', (e) => {
     camera.position.z += e.deltaY * 0.0005;
-    camera.position.z = Math.max(0.1, Math.min(0.8, camera.position.z));
+    camera.position.z = Math.max(0.1, Math.min(maxZoomZ, camera.position.z));
   });
 
   // Expose to animate loop
@@ -827,6 +851,7 @@ function selectColor(index) {
   });
   document.getElementById('selectedColor').textContent = currentColor.name;
   applyMaterial();
+  updateBookLink();
 }
 
 // ── SELECT FINISH ──
@@ -837,6 +862,7 @@ function selectFinish(index) {
   });
   document.getElementById('selectedFinish').textContent = currentFinish.name;
   applyMaterial();
+  updateBookLink();
 }
 
 // ── RESET ──
@@ -845,8 +871,28 @@ function resetSelection() {
   selectFinish(0);
 }
 
+// ── BOOK THIS COLOR → pre-fills the appointment form ──
+// Service names must match the <option> text in user-appointment.php exactly.
+const FINISH_SERVICE = {
+  glossy:   'Powder Coating — Gloss Finish',
+  matte:    'Powder Coating — Matte Finish',
+  metallic: 'Powder Coating — Metallic Finish'
+};
+const FINISH_WORD = { glossy: 'Gloss', matte: 'Matte', metallic: 'Metallic' };
+
+function updateBookLink() {
+  const btn = document.getElementById('bookBtn');
+  if (!btn || !currentColor || !currentFinish) return;
+  const params = new URLSearchParams({
+    service:      FINISH_SERVICE[currentFinish.id] || '',
+    color_finish: (FINISH_WORD[currentFinish.id] || currentFinish.name) + ' ' + currentColor.name,
+    rim:          RIM_NAME
+  });
+  btn.href = 'user-appointment.php?' + params.toString();
+}
+
 // ── INIT ──
-window.addEventListener('load', initThree);
+window.addEventListener('load', () => { initThree(); updateBookLink(); });
 </script>
 </body>
 </html>

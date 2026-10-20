@@ -73,7 +73,7 @@ $serving = $stmt4->fetch();
     </div>
     <?php endif; ?>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="two-col-grid">
       <div class="section-card">
         <div class="section-header"><h2>Now Serving</h2></div>
         <div class="section-body" style="text-align:center;padding:24px;">

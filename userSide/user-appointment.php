@@ -44,6 +44,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 }
 
+// ── Form values / prefill ──────────────────────────────────────────────
+// Comes from the 3D preview ("Book This Color") via the URL, or from the submitted
+// form when validation failed (so the customer does not have to retype everything).
+$serviceGroups = [
+  'Powder Coating' => [
+    'Powder Coating — Matte Finish',
+    'Powder Coating — Gloss Finish',
+    'Powder Coating — Metallic Finish',
+    'Powder Coating — Custom Color',
+  ],
+  'Rim Services' => ['Rim Repair', 'Rim Straightening', 'Rim Cleaning & Polishing'],
+];
+$pre = ['service'=>'','preferred_date'=>'','preferred_time'=>'','rim_count'=>'','rim_size'=>'','color_finish'=>'','vehicle'=>'','notes'=>''];
+$fromPreview = false;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error) {
+  foreach ($pre as $k => $_) { $pre[$k] = trim((string)($_POST[$k] ?? '')); }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+  $allowedServices = array_merge(...array_values($serviceGroups));   // whitelist: never trust the URL
+  $svc = trim((string)($_GET['service'] ?? ''));
+  if (in_array($svc, $allowedServices, true)) { $pre['service'] = $svc; $fromPreview = true; }
+  $pre['color_finish'] = mb_substr(trim(strip_tags((string)($_GET['color_finish'] ?? ''))), 0, 60);
+  $rimDesign = mb_substr(trim(strip_tags((string)($_GET['rim'] ?? ''))), 0, 80);
+  if ($rimDesign !== '') { $pre['notes'] = 'Rim design: ' . $rimDesign . ' (picked in 3D preview)'; }
+  if ($pre['color_finish'] !== '' || $rimDesign !== '') { $fromPreview = true; }
+}
+$e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+
 $stmt = $pdo->prepare("SELECT * FROM appointments WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->execute([userId()]);
 $appointments = $stmt->fetchAll();
@@ -90,7 +117,13 @@ $appointments = $stmt->fetchAll();
     </div>
     <?php endif; ?>
 
-    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:24px;align-items:start;">
+    <?php if ($fromPreview): ?>
+    <div style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:12px 16px;border-radius:8px;font-size:0.83rem;font-weight:600;margin-bottom:20px;">
+      Filled in from your 3D preview. Just pick a date and time &mdash; you can still change anything below.
+    </div>
+    <?php endif; ?>
+
+    <div class="appt-layout">
 
       <!-- BOOKING FORM -->
       <div class="section-card">
@@ -101,71 +134,63 @@ $appointments = $stmt->fetchAll();
               <div class="form-group span2">
                 <label>Service Type <span style="color:var(--red)">*</span></label>
                 <select name="service" required>
-                  <option value="" disabled selected>Select a service...</option>
-                  <optgroup label="Powder Coating">
-                    <option>Powder Coating — Matte Finish</option>
-                    <option>Powder Coating — Gloss Finish</option>
-                    <option>Powder Coating — Metallic Finish</option>
-                    <option>Powder Coating — Custom Color</option>
+                  <option value="" disabled<?= $pre['service'] === '' ? ' selected' : '' ?>>Select a service...</option>
+                  <?php foreach ($serviceGroups as $groupLabel => $opts): ?>
+                  <optgroup label="<?= $e($groupLabel) ?>">
+                    <?php foreach ($opts as $o): ?>
+                    <option<?= $pre['service'] === $o ? ' selected' : '' ?>><?= $e($o) ?></option>
+                    <?php endforeach; ?>
                   </optgroup>
-                  <optgroup label="Rim Services">
-                    <option>Rim Repair</option>
-                    <option>Rim Straightening</option>
-                    <option>Rim Cleaning & Polishing</option>
-                  </optgroup>
+                  <?php endforeach; ?>
                 </select>
               </div>
               <div class="form-group">
                 <label>Preferred Date <span style="color:var(--red)">*</span></label>
-                <input type="date" name="preferred_date" min="<?= date('Y-m-d') ?>" required>
+                <input type="date" name="preferred_date" min="<?= date('Y-m-d') ?>" value="<?= $e($pre['preferred_date']) ?>" required>
               </div>
               <div class="form-group">
                 <label>Preferred Time <span style="color:var(--red)">*</span></label>
                 <select name="preferred_time" required>
-                  <option value="" disabled selected>Select a time...</option>
-                  <option value="08:00">08:00 AM</option>
-                  <option value="09:00">09:00 AM</option>
-                  <option value="10:00">10:00 AM</option>
-                  <option value="11:00">11:00 AM</option>
-                  <option value="13:00">01:00 PM</option>
-                  <option value="14:00">02:00 PM</option>
-                  <option value="15:00">03:00 PM</option>
-                  <option value="16:00">04:00 PM</option>
+                  <option value="" disabled<?= $pre['preferred_time'] === '' ? ' selected' : '' ?>>Select a time...</option>
+                  <?php foreach (['08:00'=>'08:00 AM','09:00'=>'09:00 AM','10:00'=>'10:00 AM','11:00'=>'11:00 AM','13:00'=>'01:00 PM','14:00'=>'02:00 PM','15:00'=>'03:00 PM','16:00'=>'04:00 PM'] as $v => $l): ?>
+                  <option value="<?= $v ?>"<?= $pre['preferred_time'] === $v ? ' selected' : '' ?>><?= $l ?></option>
+                  <?php endforeach; ?>
                 </select>
               </div>
               <div class="form-group">
                 <label>Number of Rims</label>
                 <select name="rim_count">
-                  <option value="" disabled selected>Select...</option>
-                  <option>1 Rim (Front)</option>
-                  <option>1 Rim (Rear)</option>
-                  <option>2 Rims (Full Set)</option>
+                  <option value="" disabled<?= $pre['rim_count'] === '' ? ' selected' : '' ?>>Select...</option>
+                  <?php foreach (['1 Rim (Front)','1 Rim (Rear)','2 Rims (Full Set)'] as $o): ?>
+                  <option<?= $pre['rim_count'] === $o ? ' selected' : '' ?>><?= $e($o) ?></option>
+                  <?php endforeach; ?>
                 </select>
               </div>
               <div class="form-group">
                 <label>Rim Size</label>
                 <select name="rim_size">
-                  <option value="" disabled selected>Select size...</option>
-                  <option>14"</option><option>17"</option><option>18"</option>
-                  <option>19"</option><option>21"</option>
+                  <option value="" disabled<?= $pre['rim_size'] === '' ? ' selected' : '' ?>>Select size...</option>
+                  <?php foreach (['14"','17"','18"','19"','21"'] as $o): ?>
+                  <option<?= $pre['rim_size'] === $o ? ' selected' : '' ?>><?= $e($o) ?></option>
+                  <?php endforeach; ?>
                 </select>
               </div>
               <div class="form-group">
                 <label>Color / Finish</label>
-                <input type="text" name="color_finish" placeholder="e.g. Matte Black, Gloss Red">
+                <input type="text" name="color_finish" placeholder="e.g. Matte Black, Gloss Red" value="<?= $e($pre['color_finish']) ?>">
               </div>
               <div class="form-group">
                 <label>Motorcycle</label>
-                <input type="text" name="vehicle" placeholder="e.g. Honda CBR 150R">
+                <input type="text" name="vehicle" placeholder="e.g. Honda CBR 150R" value="<?= $e($pre['vehicle']) ?>">
               </div>
               <div class="form-group span2">
                 <label>Additional Notes</label>
-                <textarea name="notes" rows="3" placeholder="Any special requests..."></textarea>
+                <textarea name="notes" rows="3" placeholder="Any special requests..."><?= $e($pre['notes']) ?></textarea>
               </div>
             </div>
             <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;">
               <button type="submit" class="btn btn-red">Confirm Booking</button>
-              <button type="reset" class="btn btn-ghost">Clear Form</button>
+              <a href="user-appointment.php" class="btn btn-ghost">Clear Form</a>
             </div>
           </form>
         </div>
