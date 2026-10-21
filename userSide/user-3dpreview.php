@@ -93,6 +93,20 @@ if (!empty($_GET['name'])) {
       pointer-events: none;
     }
     .viewer-label span { color: #CC0000; }
+    /* The label/hint sit on top of the backdrop, so they follow its brightness */
+    .viewer-wrap:not(.dark-bg) .viewer-label { color: #1f2024; opacity: 0.6; }
+    .viewer-wrap:not(.dark-bg) .viewer-hint  { color: rgba(0,0,0,0.45); }
+    .bg-toggle {
+      position: absolute; top: 16px; right: 16px; z-index: 5;
+      display: flex; gap: 2px; padding: 3px; border-radius: 999px;
+      background: rgba(20,20,22,0.55); backdrop-filter: blur(6px);
+    }
+    .bg-toggle button {
+      border: 0; background: transparent; color: rgba(255,255,255,0.7);
+      font-family: 'Montserrat', sans-serif; font-size: 0.68rem; font-weight: 700;
+      padding: 5px 11px; border-radius: 999px; cursor: pointer;
+    }
+    .bg-toggle button.active { background: #CC0000; color: #fff; }
     .viewer-hint {
       position: absolute;
       bottom: 20px;
@@ -173,11 +187,11 @@ if (!empty($_GET['name'])) {
     /* ── Color Swatches ── */
     .color-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px 8px;
     }
     .color-swatch {
-      aspect-ratio: 1;
+      aspect-ratio: 1.5;
       border-radius: 8px;
       cursor: pointer;
       border: 2px solid transparent;
@@ -201,6 +215,7 @@ if (!empty($_GET['name'])) {
     .color-swatch.active .swatch-check { display: block; }
     .color-name {
       text-align: center;
+      line-height: 1.25;
       font-size: 0.65rem;
       color: rgba(255,255,255,0.4);
       font-family: 'Montserrat', sans-serif;
@@ -256,6 +271,30 @@ if (!empty($_GET['name'])) {
       display: none;
     }
     .finish-btn.active .finish-check { display: block; }
+
+    /* ── Shop color categories + price ── */
+    .cat-tabs {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 6px;
+      scrollbar-width: thin; scrollbar-color: #333 transparent;
+    }
+    .cat-tab {
+      flex: 0 0 auto; padding: 7px 13px; border-radius: 999px;
+      border: 1.5px solid #2a2a2a; background: #1a1a1a;
+      color: rgba(255,255,255,0.65); font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: all 0.15s;
+    }
+    .cat-tab:hover { border-color: #444; color: #fff; }
+    .cat-tab.active { border-color: #CC0000; background: rgba(204,0,0,0.12); color: #fff; }
+    .cat-note {
+      font-size: 0.7rem; color: rgba(255,255,255,0.4); font-family: 'Montserrat', sans-serif;
+      font-weight: 500; margin-bottom: 12px;
+    }
+    .preview-note {
+      font-size: 0.74rem; line-height: 1.5; color: rgba(255,255,255,0.55);
+      font-family: 'Montserrat', sans-serif; font-weight: 500;
+      background: #161616; border: 1px solid #262626; border-radius: 8px; padding: 12px 14px;
+    }
+    .preview-note strong { color: #fff; }
 
     /* ── Selected Preview ── */
     .selected-preview {
@@ -344,6 +383,11 @@ if (!empty($_GET['name'])) {
       </div>
       <canvas id="three-canvas"></canvas>
       <div class="viewer-label">BRC <span>Calamba</span></div>
+      <div class="bg-toggle" id="bgToggle" title="Background">
+        <button type="button" data-mode="auto" class="active">Auto</button>
+        <button type="button" data-mode="light">Light</button>
+        <button type="button" data-mode="dark">Dark</button>
+      </div>
       <div class="viewer-hint">
         <span class="hint-desktop">🖱 Drag to rotate &nbsp;·&nbsp; Scroll to zoom</span>
         <span class="hint-mobile" style="display:none;">👆 Drag to rotate &nbsp;·&nbsp; Pinch to zoom</span>
@@ -354,7 +398,7 @@ if (!empty($_GET['name'])) {
     <div class="control-panel">
       <div class="panel-head">
         <h2><?= htmlspecialchars($rimName) ?></h2>
-        <p>Pick a color and finish to preview</p>
+        <p>Pick one of the shop's colors to preview it on this rim</p>
       </div>
 
       <!-- Selected Summary -->
@@ -365,19 +409,21 @@ if (!empty($_GET['name'])) {
         </div>
       </div>
 
-      <!-- Colors -->
+      <!-- Shop colors -->
       <div class="panel-section">
-        <div class="panel-section-label">Color</div>
+        <div class="panel-section-label">Shop Colors</div>
+        <div class="cat-tabs" id="catTabs"></div>
+        <div class="cat-note" id="catNote"></div>
         <div class="color-grid" id="colorGrid">
           <!-- Injected by JS -->
         </div>
       </div>
 
-      <!-- Finish -->
+      <!-- Preview-only note -->
       <div class="panel-section">
-        <div class="panel-section-label">Finish / Texture</div>
-        <div class="finish-grid" id="finishGrid">
-          <!-- Injected by JS -->
+        <div class="preview-note">
+          <strong>For preview only.</strong> These colors just show how the rim could look.
+          Please visit the shop to confirm which colors are in stock and the final price.
         </div>
       </div>
 
@@ -400,48 +446,88 @@ if (!empty($_GET['name'])) {
 const RIM_FILE = '<?= $rimFile ?>';
 const RIM_NAME = <?= json_encode($RIMS[$rimFile], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
-// ── COLOR OPTIONS ──
+// ── SHOP COLOR CATALOG (from the shop's price list) ──
+// svc = which appointment service the category books as. These texts must match the
+// <option> text in user-appointment.php exactly.
+const SERVICE_TEXT = {
+  gloss:    'Powder Coating \u2014 Gloss Finish',
+  matte:    'Powder Coating \u2014 Matte Finish',
+  metallic: 'Powder Coating \u2014 Metallic Finish',
+  custom:   'Powder Coating \u2014 Custom Color'
+};
+const CATEGORIES = [
+  { id: 'regular',     name: 'Regular',     svc: 'gloss',    note: 'Solid colors' },
+  { id: 'pastel',      name: 'Pastel',      svc: 'gloss',    note: 'Soft, light tones' },
+  { id: 'special',     name: 'Special',     svc: 'metallic', note: 'Metallic and special colors' },
+  { id: 'candy',       name: 'Candy',       svc: 'metallic', note: 'Deep, see-through candy and chrome colors' },
+  { id: 'chameleon',   name: 'Chameleon',   svc: 'metallic', note: 'The color shifts as you look from different angles' },
+  { id: 'illusion',    name: 'Illusion',    svc: 'metallic', note: 'Two-tone color-shift effect' },
+  { id: 'prism',       name: 'Prism',       svc: 'metallic', note: 'Strong color-shift effect' },
+  { id: 'hammertone',  name: 'Hammertone',  svc: 'custom',   note: 'Hammered-metal texture' },
+  { id: 'fluorescent', name: 'Fluorescent', svc: 'custom',   note: 'Bright, glowing tones' },
+  { id: 'lollipop',    name: 'Lollipop',    svc: 'custom',   note: 'Bright candy-gloss colors' }
+];
+const FIN_LABEL = {
+  gloss: 'Glossy', matte: 'Matte', satin: 'Satin', pearl: 'Pearl', metallic: 'Metallic',
+  candy: 'Candy gloss', chrome: 'Chrome metallic', shift: 'Color-shift', neon: 'Fluorescent',
+  hammer: 'Hammered texture', glow: 'Glow in the dark'
+};
+// [category, name, hex, finish, shift-color]. Hex values are on-screen approximations,
+// not exact paint matches.
 const COLORS = [
-  { name: 'Silver',  hex: '#C0C0C0' },
-  { name: 'Black',   hex: '#1a1a1a' },
-  { name: 'White',   hex: '#F5F5F5' },
-  { name: 'Red',     hex: '#CC0000' },
-  { name: 'Blue',    hex: '#1a4fcc' },
-  { name: 'Gold',    hex: '#CFB53B' },
-  { name: 'Green',   hex: '#1a7a2a' },
-  { name: 'Orange',  hex: '#E85D04' },
-];
+  ['regular','Glossy White','#F6F6F3','gloss'], ['regular','Pearl White','#EFEDE4','pearl'],
+  ['regular','Aquamarine Blue','#3C9FC4','gloss'], ['regular','Turquoise Blue','#1FB3C0','gloss'],
+  ['regular','Matte Black','#151515','matte'], ['regular','Sahara Black','#202020','satin'],
+  ['regular','Glossy Black','#0B0B0C','gloss'], ['regular','Glossy Telemagenta','#D4147A','gloss'],
 
-// ── FINISH OPTIONS ──
-const FINISHES = [
-  {
-    id: 'glossy',
-    name: 'Glossy',
-    desc: 'Shiny, mirror-like surface',
-    roughness: 0.1,
-    metalness: 0.2,
-    icon: 'linear-gradient(135deg, #fff 0%, #aaa 100%)'
-  },
-  {
-    id: 'matte',
-    name: 'Matte',
-    desc: 'Flat, non-reflective surface',
-    roughness: 0.9,
-    metalness: 0.0,
-    icon: 'linear-gradient(135deg, #888 0%, #555 100%)'
-  },
-  {
-    id: 'metallic',
-    name: 'Metallic',
-    desc: 'Sparkling metallic effect',
-    roughness: 0.2,
-    metalness: 0.95,
-    icon: 'linear-gradient(135deg, #e0e0e0 0%, #888 40%, #e0e0e0 100%)'
-  },
-];
+  ['pastel','Pastel Green','#A8DDB5','gloss'], ['pastel','Pastel Turquoise','#8EDCD3','gloss'],
+  ['pastel','Blue Lilac','#B9B4E6','gloss'], ['pastel','Water Blue','#9FD0EE','gloss'],
 
-let currentColor = COLORS[0];
-let currentFinish = FINISHES[0];
+  ['special','Special Gold','#C9A227','metallic'], ['special','Special Violet','#6B3FA0','metallic'],
+  ['special','Dark Bronze','#5C4125','metallic'], ['special','Golden Metallic','#D4A63A','metallic'],
+  ['special','Bronze Golden Metallic','#A57C2E','metallic'], ['special','Black Shine Silver','#3A3C40','metallic'],
+  ['special','Metallic Bronze','#8A5A2B','metallic'], ['special','Ral Orange','#E2561B','gloss'],
+  ['special','Ferrari Red','#C0121F','gloss'], ['special','Special Silver','#BDBFC3','metallic'],
+  ['special','Super Flash Silver','#D5D8DC','metallic'], ['special','Galaxy Black','#17181D','metallic'],
+  ['special','Champagne Gold','#D9C28F','metallic'], ['special','Sparkling Silver','#C9CBD0','metallic'],
+  ['special','Gun Metal','#565B61','metallic'], ['special','RCB White','#F4F4F0','gloss'],
+
+  ['candy','Candy Red','#B00020','candy'], ['candy','Candy Purple','#6A1B9A','candy'],
+  ['candy','Candy Orange Red','#D8381A','candy'], ['candy','Chrome Metallic Blue','#1E5FC4','chrome'],
+  ['candy','Chrome Green','#1E9E4A','chrome'], ['candy','Candy Chrome Pink','#E0529C','chrome'],
+  ['candy','Candy Teal','#0E8F8A','candy'], ['candy','Coke Red','#7B0C16','candy'],
+
+  ['chameleon','Chameleon Pearl White','#EDEBF2','shift','#B7D4F5'],
+  ['chameleon','Chameleon Blue','#1E4FA8','shift','#7A34C0'],
+  ['chameleon','Chameleon Green','#1F8A55','shift','#2A6FB0'],
+  ['chameleon','Chameleon Black','#15151A','shift','#4A33A0'],
+
+  ['illusion','Illusion Red','#C21830','shift','#F0902E'], ['illusion','Illusion Magenta','#C2187A','shift','#7A3CD0'],
+  ['illusion','Illusion Shocker Green','#3FD13A','shift','#C9F028'], ['illusion','Illusion Purple','#6A2FB0','shift','#2F6AD0'],
+  ['illusion','Illusion Violet','#7B3FD0','shift','#D04FA8'], ['illusion','Illusion Green','#1F9A4A','shift','#C0D030'],
+  ['illusion','Illusion Gold','#D6A21E','shift','#E0602A'], ['illusion','Illusion Pink','#E2509A','shift','#B070E0'],
+  ['illusion','Illusion Shocker Yellow','#F2D91A','shift','#7AD02A'], ['illusion','Illusion Teal Blue','#12A3A8','shift','#3060C8'],
+  ['illusion','Illusion Blue','#2358C8','shift','#2FB0D0'], ['illusion','Glow in the Dark','#D8F5C8','glow'],
+
+  ['prism','Prism Blue','#2850C8','shift','#8A30D0'], ['prism','Prism Violet','#7A3AD0','shift','#E040A0'],
+  ['prism','Prism Green','#20A050','shift','#30B0D0'],
+
+  ['hammertone','Hammertone Candy Red','#A5122A','hammer'], ['hammertone','Hammertone Silver','#A9ACB0','hammer'],
+  ['hammertone','Hammertone Chrome Silver','#C8CBCF','hammer'], ['hammertone','Hammertone Green','#2F7A45','hammer'],
+  ['hammertone','Hammertone Blue','#2B5CA8','hammer'], ['hammertone','Hammertone Copper','#B4693A','hammer'],
+  ['hammertone','Hammertone Yellow','#D8B52A','hammer'],
+
+  ['fluorescent','Fluorescent Green','#39FF14','neon'], ['fluorescent','Fluorescent Yellow Green','#C8FF1A','neon'],
+  ['fluorescent','Fluorescent Yellow','#FFF21A','neon'],
+
+  ['lollipop','Lollipop Red','#E0102A','candy'], ['lollipop','Lollipop Blue','#1E6BE0','candy'],
+  ['lollipop','Lollipop Purple','#8A2BE0','candy'], ['lollipop','Lollipop Yellow','#FFD21A','candy']
+].map(([cat, name, hex, fin, alt]) => ({ cat, name, hex, fin, alt: alt || null }));
+
+const catById = (id) => CATEGORIES.find(c => c.id === id);
+
+let currentCat = 'regular';
+let currentColor = COLORS.find(c => c.name === 'Glossy Black');
 let rimMeshes = [];
 let scene, camera, renderer, animationId;
 let modelRadius = 0.2;   // bounding-sphere radius of the scaled rim (updated after load)
@@ -464,40 +550,6 @@ function fitCamera() {
   maxZoomZ = Math.max(0.8, dist * 1.6);
 }
 
-// ── BUILD COLOR SWATCHES ──
-const colorGrid = document.getElementById('colorGrid');
-COLORS.forEach((c, i) => {
-  const item = document.createElement('div');
-  item.className = 'color-item';
-  item.innerHTML = `
-    <div class="color-swatch ${i === 0 ? 'active' : ''}"
-         style="background:${c.hex}"
-         onclick="selectColor(${i})"
-         title="${c.name}">
-      <span class="swatch-check">✓</span>
-    </div>
-    <div class="color-name">${c.name}</div>
-  `;
-  colorGrid.appendChild(item);
-});
-
-// ── BUILD FINISH BUTTONS ──
-const finishGrid = document.getElementById('finishGrid');
-FINISHES.forEach((f, i) => {
-  const btn = document.createElement('div');
-  btn.className = `finish-btn ${i === 0 ? 'active' : ''}`;
-  btn.id = `finish-${f.id}`;
-  btn.onclick = () => selectFinish(i);
-  btn.innerHTML = `
-    <div class="finish-icon" style="background:${f.icon}"></div>
-    <div class="finish-info">
-      <h4>${f.name}</h4>
-      <p>${f.desc}</p>
-    </div>
-    <span class="finish-check">✓</span>
-  `;
-  finishGrid.appendChild(btn);
-});
 
 // ── BACKGROUND / ENVIRONMENT HELPERS ──
 // A radial-gradient canvas texture used as scene.background. Lighter in the
@@ -526,8 +578,13 @@ function createVignetteTexture() {
   const cx = cw * 0.56, cy = ch * 0.38;
   const radius = Math.max(cw, ch) * 0.72; // how far the center tone reaches before fading
   const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-  grad.addColorStop(0, '#F4F4F5'); // Soft Off-White center
-  grad.addColorStop(1, '#E4E4E7'); // Slightly darker gray edges
+  if (bgIsDark) {
+    grad.addColorStop(0, '#4B4E57'); // Charcoal spotlight (makes white/silver/pastel rims stand out)
+    grad.addColorStop(1, '#17181B'); // Near-black edges
+  } else {
+    grad.addColorStop(0, '#F4F4F5'); // Soft off-white center (makes black/dark rims stand out)
+    grad.addColorStop(1, '#E4E4E7'); // Slightly darker gray edges
+  }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, cw, ch);
   const tex = new THREE.CanvasTexture(c);
@@ -583,7 +640,7 @@ function initThree() {
   // against. This radial gradient is noticeably lighter in the center,
   // similar to a studio photography backdrop, specifically so dark/black
   // rims still read as a visible silhouette.
-  scene.background = createVignetteTexture();
+  applyBackground();   // sets scene.background for the current color / mode
 
   // Camera
   camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.01, 100);
@@ -719,20 +776,88 @@ function parseGLTF(buffer) {
   });
 }
 
-function applyMaterial() {
-  const color = new THREE.Color(currentColor.hex);
-  rimMeshes.forEach(mesh => {
-    mesh.material = new THREE.MeshStandardMaterial({
-      color: color,
-      roughness: currentFinish.roughness,
-      metalness: currentFinish.metalness,
-      envMapIntensity: 0.8,
-      // Some rim sources (e.g. AI-generated / Meshy exports) use the
-      // opposite face winding from our Blender exports. DoubleSide makes
-      // the renderer draw both sides regardless of winding direction, so
-      // a rim never goes dark/invisible just because of how it was wound.
+// Look of each finish. Only properties that exist on MeshPhysicalMaterial in three r128.
+const FIN_PARAMS = {
+  gloss:    { roughness: 0.12, metalness: 0.12, clearcoat: 1.0, clearcoatRoughness: 0.04 },
+  pearl:    { roughness: 0.20, metalness: 0.30, clearcoat: 1.0, clearcoatRoughness: 0.06 },
+  matte:    { roughness: 0.88, metalness: 0.00, clearcoat: 0.0, clearcoatRoughness: 0.5 },
+  satin:    { roughness: 0.50, metalness: 0.10, clearcoat: 0.25, clearcoatRoughness: 0.5 },
+  metallic: { roughness: 0.30, metalness: 0.90, clearcoat: 0.7, clearcoatRoughness: 0.10 },
+  candy:    { roughness: 0.14, metalness: 0.70, clearcoat: 1.0, clearcoatRoughness: 0.03 },
+  chrome:   { roughness: 0.08, metalness: 0.95, clearcoat: 1.0, clearcoatRoughness: 0.02 },
+  shift:    { roughness: 0.18, metalness: 0.65, clearcoat: 1.0, clearcoatRoughness: 0.05 },
+  neon:     { roughness: 0.35, metalness: 0.00, clearcoat: 0.5, clearcoatRoughness: 0.2 },
+  hammer:   { roughness: 0.42, metalness: 0.80, clearcoat: 0.0, clearcoatRoughness: 0.5 },
+  glow:     { roughness: 0.40, metalness: 0.00, clearcoat: 0.5, clearcoatRoughness: 0.2 }
+};
+
+// Small procedural dent pattern for the Hammertone finish
+let _hammerBump = null;
+function hammerBump() {
+  if (_hammerBump) return _hammerBump;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 128;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#808080';
+  g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 90; i++) {
+    const x = Math.random() * 128, y = Math.random() * 128, r = 6 + Math.random() * 8;
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, '#303030');
+    grad.addColorStop(0.7, '#9a9a9a');
+    grad.addColorStop(1, '#808080');
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  }
+  const t = new THREE.CanvasTexture(cv);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(6, 6);
+  _hammerBump = t;
+  return t;
+}
+
+function buildMaterial(c, mesh) {
+  const p = Object.assign(
+    {
+      color: new THREE.Color(c.hex),
+      envMapIntensity: 0.9,
+      // Some rim sources (e.g. AI-generated / Meshy exports) use the opposite
+      // face winding. DoubleSide keeps a rim from going dark/invisible.
       side: THREE.DoubleSide
-    });
+    },
+    FIN_PARAMS[c.fin] || FIN_PARAMS.gloss
+  );
+  if (c.fin === 'neon') { p.emissive = new THREE.Color(c.hex); p.emissiveIntensity = 0.5; }
+  if (c.fin === 'glow') { p.emissive = new THREE.Color('#7CFF8A'); p.emissiveIntensity = 0.55; }
+  if (c.fin === 'hammer' && mesh.geometry && mesh.geometry.attributes && mesh.geometry.attributes.uv) {
+    p.bumpMap = hammerBump();
+    p.bumpScale = 2;
+  }
+  const mat = new THREE.MeshPhysicalMaterial(p);
+
+  // Color-shift paints (Chameleon / Illusion / Prism): blend toward a second color
+  // at grazing view angles, so the color changes as the rim rotates.
+  if (c.fin === 'shift' && c.alt) {
+    const amt = c.cat === 'illusion' ? 0.6 : 0.8;
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uShiftColor = { value: new THREE.Color(c.alt) };
+      shader.uniforms.uShiftAmt = { value: amt };
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform vec3 uShiftColor;\nuniform float uShiftAmt;')
+        .replace('#include <dithering_fragment>',
+          '#include <dithering_fragment>\n' +
+          '  float shiftF = pow(1.0 - clamp(abs(dot(normalize(vNormal), normalize(vViewPosition))), 0.0, 1.0), 1.6);\n' +
+          '  gl_FragColor.rgb = mix(gl_FragColor.rgb, uShiftColor, clamp(shiftF * uShiftAmt, 0.0, 1.0));');
+    };
+    mat.customProgramCacheKey = () => 'brc-shift';
+  }
+  return mat;
+}
+
+function applyMaterial() {
+  rimMeshes.forEach(mesh => {
+    if (mesh.material && mesh.material.dispose) mesh.material.dispose();
+    mesh.material = buildMaterial(currentColor, mesh);
   });
 }
 
@@ -843,56 +968,128 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+// ── ADAPTIVE BACKDROP ──
+// No single background suits every paint: white/silver/pastel/yellow rims vanish on a light
+// one, black rims vanish on a dark one. In Auto mode the backdrop flips with the picked color.
+let bgMode = 'auto';      // 'auto' | 'light' | 'dark'
+let bgIsDark = false;
+function isLightPaint(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 0.58;   // perceived brightness
+}
+function applyBackground() {
+  bgIsDark = bgMode === 'dark' || (bgMode === 'auto' && isLightPaint(currentColor.hex));
+  const wrap = document.getElementById('viewerWrap');
+  if (wrap) wrap.classList.toggle('dark-bg', bgIsDark);
+  if (scene) {
+    if (scene.background && scene.background.dispose) scene.background.dispose();
+    scene.background = createVignetteTexture();
+  }
+}
+document.querySelectorAll('#bgToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    bgMode = btn.dataset.mode;
+    document.querySelectorAll('#bgToggle button').forEach(b => b.classList.toggle('active', b === btn));
+    applyBackground();
+  });
+});
+
+// ── CATEGORY TABS + COLOR SWATCHES ──
+function swatchStyle(c) {
+  switch (c.fin) {
+    case 'metallic':
+    case 'chrome':
+      return `background:linear-gradient(135deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,0) 35%,rgba(0,0,0,.25) 100%),${c.hex}`;
+    case 'candy':
+      return `background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55),rgba(255,255,255,0) 45%),${c.hex}`;
+    case 'shift':
+      return `background:linear-gradient(135deg,${c.hex} 0%,${c.hex} 35%,${c.alt} 100%)`;
+    case 'neon':
+      return `background:${c.hex};box-shadow:0 0 14px ${c.hex}99`;
+    case 'glow':
+      return `background:${c.hex};box-shadow:0 0 14px #7CFF8A99`;
+    case 'hammer':
+      return `background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.28) 0 6%,transparent 7%) 0 0/10px 10px,radial-gradient(circle at 70% 70%,rgba(0,0,0,.28) 0 6%,transparent 7%) 0 0/10px 10px,${c.hex}`;
+    default:
+      return `background:${c.hex}`;
+  }
+}
+
+function renderTabs() {
+  const el = document.getElementById('catTabs');
+  el.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'cat-tab' + (cat.id === currentCat ? ' active' : '');
+    b.textContent = cat.name;
+    b.onclick = () => { currentCat = cat.id; renderTabs(); renderSwatches(); };
+    el.appendChild(b);
+  });
+  const active = el.querySelector('.cat-tab.active');
+  if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+function renderSwatches() {
+  const grid = document.getElementById('colorGrid');
+  grid.innerHTML = '';
+  document.getElementById('catNote').textContent = catById(currentCat).note;
+  COLORS.forEach((c, i) => {
+    if (c.cat !== currentCat) return;
+    const item = document.createElement('div');
+    item.className = 'color-item';
+    item.innerHTML =
+      `<div class="color-swatch ${c === currentColor ? 'active' : ''}" style="${swatchStyle(c)}" title="${c.name}">` +
+      `<span class="swatch-check">\u2713</span></div><div class="color-name">${c.name}</div>`;
+    item.querySelector('.color-swatch').onclick = () => selectColor(i);
+    grid.appendChild(item);
+  });
+}
+
 // ── SELECT COLOR ──
 function selectColor(index) {
   currentColor = COLORS[index];
-  document.querySelectorAll('.color-swatch').forEach((s, i) => {
-    s.classList.toggle('active', i === index);
-  });
+  currentCat = currentColor.cat;
+  renderTabs();
+  renderSwatches();
   document.getElementById('selectedColor').textContent = currentColor.name;
+  document.getElementById('selectedFinish').textContent =
+    catById(currentColor.cat).name + ' \u00b7 ' + (FIN_LABEL[currentColor.fin] || '');
   applyMaterial();
-  updateBookLink();
-}
-
-// ── SELECT FINISH ──
-function selectFinish(index) {
-  currentFinish = FINISHES[index];
-  document.querySelectorAll('.finish-btn').forEach((b, i) => {
-    b.classList.toggle('active', i === index);
-  });
-  document.getElementById('selectedFinish').textContent = currentFinish.name;
-  applyMaterial();
+  applyBackground();
   updateBookLink();
 }
 
 // ── RESET ──
 function resetSelection() {
-  selectColor(0);
-  selectFinish(0);
+  selectColor(COLORS.findIndex(c => c.name === 'Glossy Black'));
+}
+
+// ── SERVICE for the appointment form ──
+function serviceFor(c) {
+  if (c.fin === 'matte') return SERVICE_TEXT.matte;
+  const cat = catById(c.cat);
+  if (cat.svc === 'metallic' && ['gloss', 'pearl', 'satin'].includes(c.fin)) return SERVICE_TEXT.gloss;
+  return SERVICE_TEXT[cat.svc];
 }
 
 // ── BOOK THIS COLOR → pre-fills the appointment form ──
-// Service names must match the <option> text in user-appointment.php exactly.
-const FINISH_SERVICE = {
-  glossy:   'Powder Coating — Gloss Finish',
-  matte:    'Powder Coating — Matte Finish',
-  metallic: 'Powder Coating — Metallic Finish'
-};
-const FINISH_WORD = { glossy: 'Gloss', matte: 'Matte', metallic: 'Metallic' };
-
 function updateBookLink() {
   const btn = document.getElementById('bookBtn');
-  if (!btn || !currentColor || !currentFinish) return;
+  if (!btn || !currentColor) return;
   const params = new URLSearchParams({
-    service:      FINISH_SERVICE[currentFinish.id] || '',
-    color_finish: (FINISH_WORD[currentFinish.id] || currentFinish.name) + ' ' + currentColor.name,
+    service:      serviceFor(currentColor),
+    color_finish: currentColor.name,
     rim:          RIM_NAME
   });
   btn.href = 'user-appointment.php?' + params.toString();
 }
 
 // ── INIT ──
-window.addEventListener('load', () => { initThree(); updateBookLink(); });
+selectColor(COLORS.indexOf(currentColor));   // builds tabs/swatches/price/link (no rim loaded yet, so no 3D work)
+window.addEventListener('load', initThree);
 </script>
 </body>
 </html>

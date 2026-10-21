@@ -119,7 +119,7 @@ $appointments = $stmt->fetchAll();
 
     <?php if ($fromPreview): ?>
     <div style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:12px 16px;border-radius:8px;font-size:0.83rem;font-weight:600;margin-bottom:20px;">
-      Filled in from your 3D preview. Just pick a date and time &mdash; you can still change anything below.
+      Filled in from your 3D preview. Just pick a date and time &mdash; you can still change anything below. The shop will confirm that the color is in stock.
     </div>
     <?php endif; ?>
 
